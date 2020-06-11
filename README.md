@@ -61,3 +61,34 @@ the program will fail.
 `bpm`, `att`, `rel` and `vol` can be used multiple times.
 `sr` can also be used multiple times but only the first one will be used to set the sample rate
 of the file so the others `sr` instructions will modify the following notes.
+
+## C++ version
+
+The cpp folder contains a simpler c++ version of the SineGenerator.
+The language expected is basically the same except that one line is an instruction
+if it begins with one of the 6 key-words, it is ignored otherwise. So a line
+starting with '//' is ignored so you can have comments but they have to be at the beginning
+of the line and the whole line will be ignored.
+
+Compile:
+```
+g++ -lm -std=c++11 main.cpp
+```
+
+Usage:
+```
+./a.out in out
+```
+
+`in` and `out` should be file names, but if you use a '-' then stdin/stdout will be
+used instead.
+So if you want a more complex commenting system you could pipe the file through another
+program that removes comments before piping it to the SineGenerator.
+
+The C++ version is faster and uses less memory, but the haskell version uses
+a real parser instead of the pseudo-parser used in the C++ version. However I
+have not noticed any problem with that and I find the error messages of the C++
+messages more readable.
+
+Both versions have the same functionality for now, but the C++ version is a simpler
+implementation of it.
