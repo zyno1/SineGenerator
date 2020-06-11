@@ -35,7 +35,6 @@ import System.Exit
 data State = State { volume :: Double
                    , bpm :: Double
                    , sampleRate :: Int
-                   , samples :: [Double]
                    , attack :: Double
                    , release :: Double
                    } deriving (Show, Eq)
@@ -43,28 +42,25 @@ data State = State { volume :: Double
 defaultState = State { volume = 0.5
                      , bpm = 100
                      , sampleRate = 44100
-                     , samples = []
                      , attack = 0
                      , release = 0
                      }
 
-generate :: State -> [Stmt] -> [Double]
-generate s [] = samples s
+generate :: State -> [Stmt] -> [[Double]]
+generate s [] = []
 generate s (BPM v:is) = generate (s {bpm = v}) is
 generate s (Volume v:is) = generate (s {volume = v}) is
 generate s (SampleRate v:is) = generate (s {sampleRate = v}) is
 generate s (Attack v:is) = generate (s {attack = beatesToSeconds (bpm s) v}) is
 generate s (Release v:is) = generate (s {release = beatesToSeconds (bpm s) v}) is
-generate s (Silence b:is) = generate (s {samples = ns}) is
-    where ns = mconcat [samples s, n]
-          count = (beatesToSeconds (bpm s) b) * (fromIntegral $ sampleRate s)
+generate s (Silence b:is) = n : (generate s is)
+    where count = (beatesToSeconds (bpm s) b) * (fromIntegral $ sampleRate s)
           n = take (round count) (cycle [0])
 
 generate s (Note note b:is) = if isJust f
-    then generate (s {samples = ns}) is
+    then n : (generate s is)
     else error (mconcat ["note ", note, " not found"])
-    where ns = mconcat [samples s, n]
-          time = beatesToSeconds (bpm s) b
+    where time = beatesToSeconds (bpm s) b
           attRelVec = vec (sampleRate s) (attack s) (release s) time
           n = sineMult attRelVec $ map (* (volume s)) $ sine (sampleRate s) time (fromJust f)
           f = findNote note
@@ -86,5 +82,5 @@ main = do
             exitFailure
         else do
             (Seq input) <- parseFile (head argv)
-            let wave = generate defaultState input
+            let wave = (generate defaultState input)
             save wave (firstSampleRate input) (head $ tail argv)
